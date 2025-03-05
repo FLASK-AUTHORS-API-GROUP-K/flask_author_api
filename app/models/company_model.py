@@ -6,12 +6,14 @@ class Company(db.Model):
     name = db.Column(db.String(20))
     origin = db.Column(db.String(100))
     description = db.Column(db.String(100))
+    user_id = db.Column(db.Integer,db.ForeignKey("users_id"))
+    user = db.relationship('user',backref = 'company')
     created_at = db.Column(db.DateTime,  default = datetime.now())
     updated_at = db.Column(db.DateTime,  onupdate = datetime.now())
     specialisation = db.Column(db.String(50))
     
     
-    def __init__(self, id, name, origin, description, created_at, updated_at, specialisation):
+    def __init__(self, id, name, origin, description, created_at, updated_at, specialisation ,user_id):
         self.id = id
         self.name = name
         self.origin = origin

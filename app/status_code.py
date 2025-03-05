@@ -21,3 +21,5 @@ HTTP_409_CONFLICT = 409
 
 HTTP_500_INTERNAL_SERVER_ERROR = 500  
 # Internal Server Error; indicates that the server encountered an unexpected condition that prevented it from fulfilling the request.
+
+HTTP_409_NOT_CONFLICT =402
