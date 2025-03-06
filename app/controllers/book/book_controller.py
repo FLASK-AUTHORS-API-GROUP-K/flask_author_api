@@ -1,41 +1,68 @@
 from flask import Blueprint, request, jsonify
-from app.models.book_model import Book
+from app.status_code import HTTP_400_BAD_REQUEST,HTTP_409_CONFLICT,HTTP_500_INTERNAL_SERVER_ERROR, HTTP_200_OK, HTTP_401_UNAUTHORIZED, HTTP_201_CREATED
 import validators
-from app.status_code import HTTP_200_OK, HTTP_201_CREATED, HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST,HTTP_401_UNAUTHORIZED,HTTP_404_NOT_FOUND,HTTP_409_CONFLICT,HTTP_500_INTERNAL_SERVER_ERROR
+from app.models.book_model import Book
 from app.extensions import db, bcrypt
-from flask_jwt_extended import create_accesss_token, create_refresh_token,jwt_required,get_jwt_identity
+from flask_jwt_extended import create_access_token, jwt_required,get_jwt_identity, create_refresh_token
 
-books_bp = Blueprint('books', __name__url_prefix='/api/v1/books')
 
-# Creating a new book
-@books_bp.route('/create', methods=['POST'])
+
+
+#book blueprint
+book = Blueprint('book', __name__, url_prefix='/api/v1/book')
+
+#creating  a book
+
+@book.route('/create', methods=['POST'])
 @jwt_required(get_jwt_identity)
-def create_book():
+def createBook():
     data = request.get_json()
     title = data.get("title")
     price = data.get('price')
     description = data.get('description')
     isbn = data.get('isbn')
+    image = data.get('image')
     no_of_pages = data.get('no_of_pages')
     price_unit = data.get('price_unit')
     publication_year = data.get('publication_year')
     genre = data.get('genre')
     specialisation = data.get('specialisation')
     company_id = data.get('company_id')
-
-
-    #validation of the incoming request data
-    if not title or not isbn or not price or not description or not no_of_pages or not price_unit or not genre  or not specialisation:
-     return jsonify ({"error":"All fields are required"}), HTTP_400_BAD_REQUEST
-    
-    
-    if Book.querry.filter_by(title=title, user_id=user_id).first() is not None:
-       return jsonify ({"error":"Book with this title and user id already exists"}),HTTP_409_CONFLICT
-    
-    
-    if Book.querry.filter_by(isbn=isbn).first() is not None:
-      return jsonify ({"error":"Book isbn is already in use"}), HTTP_409_CONFLICT
-    
     
 
 
+    #validations of the incoming request
+
+    if not title or not price or not description or not isbn or not image or not no_of_pages or not price_unit or not publication_year or not genre or not specialisation or not company_id:
+        return jsonify({"error":"All fields are required"}),HTTP_400_BAD_REQUEST
+    
+
+    if Book.query.filter_by(title=title).first() is not None:
+        return jsonify({"error":"Book title already exists."}),HTTP_409_CONFLICT
+    
+    
+    try:
+      
+
+       #creating a new company
+       new_book = Book(title=title,price=price, description=description, company_id=company_id)
+       db.session.add(new_book)
+       db.session.commit()
+
+
+
+       return jsonify({
+           'message': title + " has been successfully created as an " + new_book,
+           'user':{
+               'id':new_book.id,
+               "name":new_book.title,
+               "origin":new_book.price,
+               "description": new_book.description
+              
+           }
+       }),HTTP_201_CREATED
+
+    except Exception as e:   
+        db.session.rollback() 
+        return jsonify({'error':str(e)}),HTTP_500_INTERNAL_SERVER_ERROR
+    book_controllers

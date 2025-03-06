@@ -9,13 +9,9 @@ class Company(db.Model):
     created_at = db.Column(db.DateTime,  default = datetime.now())
     updated_at = db.Column(db.DateTime,  onupdate = datetime.now())
     specialisation = db.Column(db.String(50))
-
-    #foreign keys
-    book_id= db.Column(db.Integer, primary_key=True)
+    book_id= db.Column(db.Integer, primary_key=True) #foreign keys
     author_id = db.Column(db.Integer, primary_key=True, nullable=False)
-    
-    # Relationship to Book
-    books = db.relationship('Book', back_populates='company')
+    books = db.relationship('Book', back_populates='company') #relationship
     
     
     def __init__(self, id, name, origin, description, created_at, updated_at, specialisation):

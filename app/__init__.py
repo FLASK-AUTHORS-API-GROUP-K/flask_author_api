@@ -12,8 +12,8 @@ def create_app():  #application factory function
     
     #registering models 
     from app.models.author_model import Author
-    from app.models.book_model import Book
     from app.models.company_model import Company
+    from app.models.book_model import Book
     
     #index route
     @app.route('/') 
