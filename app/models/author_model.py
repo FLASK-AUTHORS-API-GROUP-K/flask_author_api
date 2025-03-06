@@ -23,6 +23,14 @@ class Author(db.Model):
     # Relationship to Book
     books = db.relationship('Book', back_populates='author')
     
+    #foreign keys
+    book_id= db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=True)
+    
+    # Relationship to Book
+    books = db.relationship('Book', back_populates='author')
+
+    
     def __init__(self, id, first_name, last_name, contact, email, password, image, created_at, updated_at, biography, specialisation):
         self.first_name = first_name
         self.last_name = last_name

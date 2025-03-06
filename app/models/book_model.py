@@ -20,6 +20,14 @@ class Book(db.Model):
     author = db.relationship('Author', back_populates='books') #relationship
     company = db.relationship('Company', back_populates='books')
     
+    #foreign keys
+    author_id = db.Column(db.Integer, db.ForeignKey('Authors.id'), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=True)
+    
+    # Relationships
+    author = db.relationship('Author', back_populates='books')
+    company = db.relationship('Company', back_populates='books')
+    
     def __init__(self, id, title, price, description, isbn, image, no_of_pages, price_unit, publication_year, genre, created_at, updated_at, specialisation):
         self.title = title
         self.price = price
