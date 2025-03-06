@@ -15,6 +15,13 @@ class Author(db.Model):
     updated_at = db.Column(db.DateTime,  onupdate = datetime.now())
     specialisation = db.Column(db.String(50))
     biography = db.Column(db.Text, nullable=True)
+
+    #foreign keys
+    book_id= db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=True)
+    
+    # Relationship to Book
+    books = db.relationship('Book', back_populates='author')
     
     #foreign keys
     book_id= db.Column(db.Integer, primary_key=True)
