@@ -1,6 +1,9 @@
 from flask import Flask # importing flask
 from app.extensions import db, migrate, jwt # importing the database and migrate instance
 from app.controllers.auth.auth_controller import auth
+from app.controllers.author.author_controller import author
+
+
 
 # Creating an apppliction factory function
 def create_app():
@@ -19,9 +22,11 @@ def create_app():
     from app.models.company_model import Company
     from app.models.book_model import Book
     
+    
     #registering blueprints
-
     app.register_blueprint(auth)
+    app.register_blueprint(author)
+    
     
     @app.route('/') # index route
     def index():

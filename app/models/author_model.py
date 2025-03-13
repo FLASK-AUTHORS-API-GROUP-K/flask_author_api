@@ -1,6 +1,7 @@
 from app.extensions import db
 from datetime import datetime
-
+# from app.models.company_model import Company 
+# from app.models.book_model import Book
 
 class Author(db.Model):
     __tablename__ = "Authors"
@@ -15,6 +16,12 @@ class Author(db.Model):
     specialisation = db.Column(db.String(50))
     biography = db.Column(db.String(255), nullable=True)
 
+    # #foreign keys
+    # book_id= db.Column(db.Integer, db.ForeignKey('Book.id'), nullable=True)
+    # company_id = db.Column(db.Integer, db.ForeignKey('Company.id'), nullable=True)
+    
+    # # Relationship to Book
+    # books = db.relationship('Book', back_populates='author')
     
     def __init__(self, id, first_name, last_name, contact, email, password, created_at, updated_at, biography, specialisation):
         self.first_name = first_name

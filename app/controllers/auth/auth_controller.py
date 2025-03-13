@@ -1,20 +1,28 @@
-# Storing functions used to perform differnt authentication process
+# Authentication is the process of verifying a user's or system identity before giving them access to resources
+# This prevents unauthorised access of resources
+
+# blueprints refer to a way of organising related code and views
+# blueprints help us breakdown large projects into smaller, reusable modules
+
+
+# The controller folder is for storing functions used to perform differnt tasks
 # Controller functions are used to handle requests and return responses to the client
 # Controller functions are defined as route handlers in Flask applications. They handle incoming requests
 
 from flask import Blueprint, request, jsonify # Importing the Blueprint and request and jsonify classes from the flask module
 from app.status_codes import HTTP_400_BAD_REQUEST, HTTP_409_CONFLICT, HTTP_500_INTERNAL_SERVER_ERROR,   HTTP_201_CREATED, HTTP_200_OK , HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND, HTTP_204_NO_CONTENT  # Importing the HTTP status codes from the status_codes module
 import validators  # Importing the validators module
-from app.models.author_model import Author  # Importing the Author model from the author_model module
+from app.models.author_model import Author  # Importing the Author class from the author_model module
 from app.extensions import db, bcrypt  # Importing the db object from the extensions module
-from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity # Importing the create_access_token, create_refresh_token, jwt_required, and get_jwt_identity functions from the flask_jwt_extended module
+from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity # Importing functions from the flask_jwt_extended module
 
 
+# Creating a Blueprint instance
+auth = Blueprint('auth', __name__, url_prefix='/api/v1/auth')  
 
-auth = Blueprint('auth', __name__, url_prefix='/api/v1/auth')  # Creating a Blueprint instance
 # 'auth'  is the name of the blueprint. It is used internally by Flask to identify the blueprint
 # URL path prefix is used in web applications to define a base path for authentication-related API endpoints
-# url_prefix='api/v1/auth - This sets a URL prefix for all the routes defined in this blueprint. 
+# It is used by all the routes defined in the blueprint. 
 # For example, if you define a route /login within this blueprint, it will be accessible at /api/v1/auth/login.
 
 
@@ -22,11 +30,10 @@ auth = Blueprint('auth', __name__, url_prefix='/api/v1/auth')  # Creating a Blue
 @auth.route('/register', methods=['POST'])  # Defining a route for user registration
 # The route() decorator is used to bind a function to a URL 
 # register is the url name
-# The POST method is used to send data to the server to create/update a resource.
+# The POST method is used to send data to the server to create/update a resource
 
 def register_user():
-    data = request.json  # Extracting the JSON data as content type the request
-    id = data.get('id')  # Extracting the id from the JSON data
+    data = request.json  
     first_name = data.get('first_name')  
     last_name = data.get('last_name')  
     contact = data.get('contact')
@@ -41,57 +48,66 @@ def register_user():
     if not first_name or not last_name or not contact or not email or not password: # Checking if all required fields are filled
         return jsonify({'error': 'All fields are required'}), HTTP_400_BAD_REQUEST
     
-    
-    if type == 'author' and not biography:
+    if not biography:
         return jsonify({'error': 'Biography is required for authors'}), HTTP_400_BAD_REQUEST
     
-    if len(password) < 8:
+    if len(password) < 8: # checking the password length
         return jsonify({'error': 'Password must be at least 8 characters'}), HTTP_400_BAD_REQUEST
     
-    if not validators.email(email):
+    if not validators.email(email): # ensuring the correct email format
         return jsonify({'error': 'Invalid email address'}), HTTP_400_BAD_REQUEST
     
-    if Author.query.filter_by(email=email).first():
+    if Author.query.filter_by(email=email).first() is not None: # checking whether the email is already registered
         return jsonify({'error': 'Email already in use'}), HTTP_409_CONFLICT
     
-    if Author.query.filter_by(contact=contact).first():
+    if Author.query.filter_by(contact=contact).first() is not None: # checking whether the contact is in use
         return jsonify({'error': 'Contact already in use'}), HTTP_409_CONFLICT
     
+    # Validator library validates automatically
     
-    # the try block is used to handle potential exceptions that might occur during the process of creating and saving a new Author object to the database. 
+    # the try block is used to handle potential exceptions that might occur 
+    # during the process of creating and saving a new Author object to the database. 
     # The try block ensures that any errors during the creation and saving of the Author object are gracefully handled, 
     # providing a clear error message to the client instead of causing the server to crash or return an unhandled exception.
     
     try:
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8') # Hashing the password
+        
         # Creating a new Author instance 
-        author_1 = Author(id=id, first_name=first_name, last_name=last_name, contact=contact, email=email, password=hashed_password, biography=biography, specialisation = specialisation, created_at = created_at, updated_at = updated_at)    
+        author_1 = Author(first_name=first_name,
+                          last_name=last_name, 
+                          contact=contact, 
+                          email=email, 
+                          password=hashed_password, 
+                          biography=biography, 
+                          specialisation = specialisation
+                          )    
+        
         db.session.add(author_1)  # Adding the new Author instance to the database session
         db.session.commit()  # Committing the changes to the database   
         
         username = author_1.first_name + ' ' + author_1.last_name
         return jsonify({
-            'message': username + ' has been registered successfully'}), HTTP_201_CREATED
+            'message': username + ' has been registered successfully'
+            }), HTTP_201_CREATED
     
     except Exception as e:
         db.session.rollback() # This line rolls back the current transaction in the database session
         # The rollback() method is used to undo all the changes made in the current transaction
-        # If an error occurs (caught by the except block), 
-        # db.session.rollback() is called to undo any changes made during the transaction.
-        return jsonify({'error': str(e)}), HTTP_500_INTERNAL_SERVER_ERROR # If an error occurs, a 500 Internal Server Error response is returned to the client
+        # If an error occurs (caught by the except block), db.session.rollback() is called to undo any changes made during the transaction.
+        return jsonify({'error': str(e)}), HTTP_500_INTERNAL_SERVER_ERROR
+        # If an error occurs, a 500 Internal Server Error response is returned to the client
         
         
-# User login        
+# Author login        
 
 @auth.route('/login', methods=['POST'])  # Defining a route for user login
 def login():
-    
     email = request.json.get('email')  # Extracting the email from the JSON data
     password = request.json.get('password')  # Extracting the password from the JSON data   
     
     
     try:
-        
         if not email or not password:
             return jsonify({'message': 'Email and password are required'}), HTTP_400_BAD_REQUEST
     
@@ -101,11 +117,8 @@ def login():
             is_correct_password = bcrypt.check_password_hash(author.password, password)
         
             if is_correct_password: 
-                access_token = create_access_token(identity=author.id)  # Creating an access token for the user
-                refresh_token = create_refresh_token(identity=author.id)  # Creating a refresh token for the user
-
-
-
+                access_token = create_access_token(identity=str(author.id))  # Creating an access token for the user
+                refresh_token = create_refresh_token(identity=str(author.id))  # Creating a refresh token for the user
 
                 return jsonify({
                     'message': 'You have successfully logged into your account',
@@ -119,8 +132,6 @@ def login():
         else:
             return jsonify({'message': 'Invalid email address'}), HTTP_401_UNAUTHORIZED
     
-
-    
     
     except Exception as e:
         return jsonify({
@@ -131,8 +142,8 @@ def login():
 @auth.route("/token/refresh", methods=["POST"])
 @jwt_required(refresh=True) # This decorator is used to protect routes that require a valid refresh token
 def refresh():
-    identity = get_jwt_identity()  # Extracting the identity from the JWT token
-    access_token = create_access_token(identity=identity) # Creating a new access token
+    identity = str(get_jwt_identity())  # Extracting the identity from the JWT token and ensuring it is a string
+    access_token = create_access_token(identity=identity)  # Creating a new access token
     return jsonify({'access_token': access_token}), HTTP_200_OK
     
     
