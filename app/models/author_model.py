@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 class Author(db.Model):
-    __tablename__ = "Authors"
+    __tablename__ = "authors"
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     first_name = db.Column(db.String(100), nullable=False)
     last_name = db.Column(db.String(100), nullable=False)
@@ -22,13 +22,7 @@ class Author(db.Model):
     
     # Relationship to Book
     books = db.relationship('Book', back_populates='author')
-    
-    #foreign keys
-    book_id= db.Column(db.Integer, primary_key=True)
-    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=True)
-    
-    # Relationship to Book
-    books = db.relationship('Book', back_populates='author')
+    company = db.relationship('Company', back_populates='books')
 
     
     def __init__(self, id, first_name, last_name, contact, email, password, image, created_at, updated_at, biography, specialisation):

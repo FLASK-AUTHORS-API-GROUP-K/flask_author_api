@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
-from app.status_code import HTTP_400_BAD_REQUEST,HTTP_409_CONFLICT,HTTP_500_INTERNAL_SERVER_ERROR, HTTP_200_OK, HTTP_401_UNAUTHORIZED, HTTP_201_CREATED
+HTTP_404_NOT_FOUND = 404  
+from app.status_code import HTTP_400_BAD_REQUEST,HTTP_409_CONFLICT,HTTP_500_INTERNAL_SERVER_ERROR, HTTP_200_OK, HTTP_401_UNAUTHORIZED, HTTP_201_CREATED, HTTP_404_NOT_FOUND  
 import validators
 from app.models.author_model import Author
 from app.extensions import db, bcrypt
@@ -128,3 +129,63 @@ def refresh():
     identity = get_jwt_identity()
     access_token = create_access_token(identity=identity)
     return jsonify(access_token=access_token)
+
+
+#updating the auth
+@auth.route("edit/<int:id>", methods=["PUT", "PATCH"])
+@jwt_required() 
+def updatingTheAuth(id):
+    
+    try:
+        current_auth = get_jwt_identity()
+        logged_in_author = auth.query.filter_by(id=current_auth).first()
+
+        #get user by id
+        auth = Author.query.get(id) 
+
+        if not auth:
+            return jsonify({'message': 'Author does not exist'}), HTTP_404_NOT_FOUND
+        
+        elif logged_in_author.id != auth.id:
+            return jsonify({'message': 'You are not authorized to edit this author'}), HTTP_401_UNAUTHORIZED
+        
+        else:
+            data = request.get_json() # Extracting the JSON data
+            first_name = data.get('first_name', auth.first_name) # Extracting the first name from the JSON data
+            last_name = data.get('last_name', auth.last_name) # Extracting the last name from the JSON
+            contact = data.get('contact', auth.contact)
+            email = data.get('email', auth.email)
+            biography = data.get('biography', auth.biography)
+            specialisation = data.get('specialisation', auth.specialisation)    
+            
+            if "password" in request.json:
+                password = request.json.get('password')
+                hashed_password = bcrypt.generate_password_hash(password)
+                auth.password = hashed_password
+
+            auth.first_name = first_name
+            auth.last_name = last_name
+            auth.contact = contact
+            auth.email = email
+            auth.biography = biography
+            auth.specialisation = specialisation
+            
+            db.session.commit() # Committing the changes to the database
+            
+            author_name = auth.first_name + ' ' + auth.last_name
+            return jsonify({
+                'message': author_name + ' has been updated successfully',
+                'author': {
+                    'first_name' : auth.first_name,
+                    'last_name' : auth.last_name,
+                    'email' : auth.email,
+                    'contact' : auth.contact,
+                    'biography' : auth.biography,
+                    'specialisation' : auth.specialisation,
+                    'created_at' : auth.created_at}
+                }), HTTP_200_OK
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), HTTP_500_INTERNAL_SERVER_ERROR
+
+

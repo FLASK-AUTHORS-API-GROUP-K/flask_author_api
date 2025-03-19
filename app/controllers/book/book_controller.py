@@ -9,7 +9,7 @@ from flask_jwt_extended import create_access_token, jwt_required,get_jwt_identit
 
 
 #book blueprint
-book = Blueprint('book', __name__, url_prefix='/api/v1/book')
+book = Blueprint('book', __name__, url_prefix='/api/v1/book')  
 
 #creating  a book
 
@@ -44,9 +44,9 @@ def createBook():
     try:
       
 
-       #creating a new company
+       #creating a new book
        new_book = Book(title=title,price=price, description=description, company_id=company_id)
-       db.session.add(new_book)
+       db.session.add(new_book)  #adding a new instance
        db.session.commit()
 
 
@@ -60,9 +60,173 @@ def createBook():
                "description": new_book.description
               
            }
-       }),HTTP_201_CREATED
-
+       }),HTTP_201_CREATED   #returning a response to the user
+    
+    
     except Exception as e:   
         db.session.rollback() 
         return jsonify({'error':str(e)}),HTTP_500_INTERNAL_SERVER_ERROR
-    book_controllers
+    
+
+
+    # updating book details 
+@book.route('/edit/<int:id>', methods=['PUT','PATCH'])
+@jwt_required()
+def updatingBook(id):
+    
+    try:
+        current_user = get_jwt_identity()
+        loggedInUser = book.query.filter_by(id=current_user).first()
+        
+        #getting a book by id
+        Book.filter_by(id=id).first()
+
+        if not book:
+            return jsonify({"error":"Book not found"}),HTTP_400_BAD_REQUEST
+        
+        elif loggedInUser.user_type!='admin'and book.user_id!=current_user:
+            return jsonify({"error":"You are not authorised to update the book details"}),HTTP_400_BAD_REQUEST
+        
+        else:
+            # store request data
+            title = request.get_json().get("title",book.name)
+            price = request.get_json().get("price",book.price)
+            description = request.get_json().get("title",book.description)
+            isbn = request.get_json().get("isbn",book.isbn)
+            image = request.get_json().get("image",book.image)
+            no_of_pages = request.get_json().get("no_of_pages",book.no_of_pages)
+            price_unit = request.get_json().get("rice_unit",book.rice_unit)
+            publication_year =  request.get_json().get("publication_year",book.publication_year)
+            genre = request.get_json().get("genre",book.genre)
+            specialisation = request.get_json().get("specialisation",book.specialisation)
+            company_id = request.get_json().get(" company_id",book. company_id)
+    
+            if isbn != book.isbn and Book.query.filter_by(isbn=isbn).first():
+                return jsonify({ 
+                    "error":"ISBN already in use"
+                }), HTTP_409_CONFLICT   
+
+
+            if title != book.title and Book.query.filter_by(title=title, user_id=current_user).first():
+                return jsonify({"error":"Book title already exists."}),HTTP_409_CONFLICT
+    
+            book.title = title
+            book.price = price
+            book.description = description
+            book.isbn = isbn
+            book.image = image
+            book.no_of_pages = no_of_pages
+            book.unit_price = price_unit
+            book.publication_year =publication_year 
+            book.specialisation = specialisation
+            book.comapany_id = company_id
+
+            db.session.commit()     #commiting changes to the data base
+      
+            return jsonify({
+           'message': title + " has been successfully updated",
+           'book':{
+               'id':book.id,
+        'name':book.name,
+        'description':book.description,
+        'genre': book.genre,
+        'isbn': book.isbn,
+        'publication_year': book.publication_year,
+        'price': book.price_unit,
+        'no_of_pages' :book.no_of_pages,
+        'title': book.title,
+        'Company':{
+            'id': book.Company.id,
+        'name': book.Company.name, 
+        'description' :book.Company.description,
+             },
+
+        'author':{ 
+            'first_name':book.user.first_name,
+        'last_name': book.user.last_name,
+        'email':book.user.email,
+        'contact': book.user.contact,
+        'biography': book.user.biography } 
+           }
+       }),HTTP_201_CREATED
+        
+    except Exception as e:   
+        db.session.rollback() 
+        return jsonify({'error':str(e)}),HTTP_500_INTERNAL_SERVER_ERROR
+    
+
+    
+
+ #getting a book by id
+@book.get('/book/<int:id>')  
+@jwt_required()
+def get_book(id):
+    
+    try:
+        
+        book = Book.query.filter_by(id=id).first() # Querying the database for the book with the specified id
+        
+        if not Book:
+            return jsonify({"error" : "Book not found"}),HTTP_400_BAD_REQUEST
+        return jsonify({
+            'message': 'Author retrieved successfully',
+            'author': {
+                'id' : book.id,
+                'title' : book.first_name,
+                'price' : book.last_name,
+                'specializtion' : book.specialization,
+                'description' : book.description,
+                'isbn' : book.isbn,                
+                'image' : book.image,
+                'genre' : book.genre,
+                'no_of_pages' :book.no_of_pages, 
+                'price_unit' : book.price_unit,
+                'created_at' : book.created_at,
+                'updated_at' : book.updated_at,
+                'author_id' :book. author_id,
+                'company_id': book.company_id
+
+
+            }
+        }) , HTTP_200_OK 
+
+    except Exception as e:
+        return jsonify({
+            'error': str(e)
+            }), HTTP_500_INTERNAL_SERVER_ERROR
+    
+
+    
+#deleting a book
+@book.route('/delete/<int:id>', methods=['DELETE'])
+@jwt_required()
+def deletingBook(id):
+    
+    try:
+        current_user = get_jwt_identity()
+        loggedInUser = book.query.filter_by(id=current_user).first()
+        
+        #getting a book by id
+        book = Book.filter_by(id=id).first()
+
+        if not book:
+            return jsonify({"error":"Book not found"}),HTTP_400_BAD_REQUEST
+        
+        elif loggedInUser.user_type!='admin'and book.user_id!=current_user:
+            return jsonify({"error":"You are not authorised to delete the book details"}),HTTP_400_BAD_REQUEST
+        
+        else:
+            
+             db.session.delete(book)
+             db.session.commit()     #commiting changes to the data base 
+
+             return jsonify({
+                 "message" : "Book deleted successfully"
+             })
+        
+    except Exception as e:
+        return jsonify({
+            'error': str(e)
+            }), HTTP_500_INTERNAL_SERVER_ERROR
+    book_controller   
+    

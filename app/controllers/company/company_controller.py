@@ -39,7 +39,7 @@ def createCompany():
 
        #creating a new company
        new_company = Company(name=name,origin = origin, description=description, user_id=user_id)
-       db.session.add(new_company)
+       db.session.add(new_company)   #adding a new instance 
        db.session.commit()
 
 
@@ -51,7 +51,7 @@ def createCompany():
                "name":new_company.name,
                "origin":new_company.origin,
                "description": new_company.description
-              
+        
            }
        }),HTTP_201_CREATED
 
@@ -59,3 +59,5 @@ def createCompany():
         db.session.rollback() 
         return jsonify({'error':str(e)}),HTTP_500_INTERNAL_SERVER_ERROR
     company_controllers
+
+    
